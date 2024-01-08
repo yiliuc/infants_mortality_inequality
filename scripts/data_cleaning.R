@@ -1,5 +1,5 @@
 # Import the raw data of income
-income16 <- read.csv("data/raw/ACS_DP03_income_county_2016.csv")
+income16 <- read.csv("inputs/data/ACS_DP03_income_county_2016.csv")
 
 # Clean the income data (From ACS DP05)
 library(dplyr)
@@ -56,7 +56,7 @@ income <- income16_clean # income is now the cleaned data set
 
 
 # Import the raw data of infants mortality
-infants <- read.csv("data/raw/CDC_infants_mortality_1999_to_2016.csv")
+infants <- read.csv("inputs/data/CDC_infants_mortality_1999_to_2016.csv")
 
 # Clean the infants mortality data
 # Re-formatting the "county" and "state" in the infants data
@@ -85,4 +85,4 @@ data <- merge(income, infants, by = c("county", "state")) %>%
   clean_names()
 
 # You can also export the merged data
-# write.csv(data, "data.csv", row.names = FALSE)
+write.csv(data, "outputs/data/data.csv", row.names = FALSE)
