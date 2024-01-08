@@ -11,6 +11,7 @@ library(knitr)
 library(kableExtra)
 library(broom)
 library(ggplot2)
+library(here)
 ```
 
 
@@ -37,7 +38,7 @@ Given the OLS regression, I will assume the relationship between dependent and i
 # Results
 
 ```{r}
-data <- read.csv("data.csv")
+data <- read.csv(here("outputs/data/data.csv"))
 data$White <- ifelse(data$race == "White", 1, 0)
 data$HighIncome <- ifelse(data$pctile > 50, 1, 0)
 data$White_HighIncome <- data$White * data$HighIncome
