@@ -1,0 +1,162 @@
+---
+title: "**Accessing Racial Inequalities in Infant Mortality: Household Income Levels as a Determining Factor**"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(broom)
+library(ggplot2)
+```
+
+
+# Introduction
+
+The Infant Mortality Rate (IMR) is a pivotal metric for health and economic inequalities. However, IMR varies between races. Notably, Black infants in Wisconsin have the highest IMR in the U.S. (Houseal & Wisconsin Watch, 2023). This paper will explore the relationship between IMR for white and black and household income in the U.S. The main research question is: **How do mortality rates vary among white and black infants, and how does it shift between the bottom and top 50 income percentiles counties?**
+
+While existing research has highlighted that blacks have a higher IMR than whites and an inverse relationship between IMR and income levels (Russo & Lukasik, 2022; Rosenquist et al., 2020), this study delves deeper into the interaction effects of race and income. Therefore, the null hypothesis is that **variations in income do NOT result in significant changes in IMR inequality across distinct demographic groups.**
+
+# Data
+
+The data utilized in this study combines the American Community Survey (ACS) (U.S. Census Bureau, 2016) and the Compressed Mortality File from the Centers for Disease Control and Prevention (CDC WONDER, 2023).
+
+For the American Community Survey (ACS), I took the 2016 5-year estimates of DP03, which provides the mean household income data for each U.S. county. The Compressed Mortality File is available on CDC WONDER. It contains the total number of white and black newborn infants and their associated death counts from 1999 to 2016.
+
+To perform the data analysis later, I merged the two data sets by the county. Each row in the merged data contains information on infant mortality and the mean household income for each U.S. county by 2016.
+
+# Methods
+
+The method used in this paper is the OLS regression model. The response variable will be the deaths of infants. For predictors, aside from the household income percentile for each county, three dummy variables are race, whether the county is high-income (income percentile > 50), and whether the infant is white and born in a high-income county. I will also include interaction terms between the percentile and each dummy variable to test the null hypothesis.
+
+Given the OLS regression, I will assume the relationship between dependent and independent variables is linear. However, multicollinearity is one limitation, as the predictors may be dependent. For instance, whether a county is considered high-income depends on its income percentile. The accuracy of prediction might be influenced.
+
+# Results
+
+```{r}
+data <- read.csv("data.csv")
+data$White <- ifelse(data$race == "White", 1, 0)
+data$HighIncome <- ifelse(data$pctile > 50, 1, 0)
+data$White_HighIncome <- data$White * data$HighIncome
+model <- lm(crude_rate ~ pctile*race + pctile*HighIncome + pctile*White_HighIncome, data = data)
+```
+
+
+Using the merged data, the OLS regression model is:
+\[
+\begin{aligned}
+\text{Mortality} &=  1473.46\\
+& - 3.26 \times \text{Percentile} \\
+& - 681.27 \times 1[\text{Race} = \text{White}] \\
+& + 209.35 \times 1[\text{HighIncome} = \text{Yes}] \\
+& - 176.94 \times 1[\text{White\_HighIncome} = \text{Yes}] \\
+& + 0.31 \times \text{Percentile} \times 1[\text{Race} = \text{White}] \\
+& - 3.24 \times \text{Percentile} \times 1[\text{HighIncome} = \text{Yes}] \\
+& + 2.92 \times \text{Percentile} \times 1[\text{White\_HighIncome} = \text{Yes}]
+\end{aligned}
+\]
+
+In the model above, "Mortality" represents the infant deaths per 100,000. "Race" indicates the race of infants: White or Black, with values of 1 and 0. Besides, "HighIncome" equals 1, indicating the county has an income percentile larger than 50; otherwise, 0. Additionally, "White_HighIncome" equals 1, denoting the white infants living in wealthier counties. Otherwise, it is 0.
+
+In the model, the intercept, 1473.46, denotes the mortality of black infants living in the poorest county. Regardless of the infant's race, a reduction of approximately three is expected in infant deaths for every percentile increase in income. Comparing Black and White infants, holding others constant, White infants have an expected mortality rate of 681.27 lower than Black. However, the IMR for high-income counties is expected to be 209.35 more than for low-income ones. Furthermore, White infants in wealthier counties are expected to have a mortality rate 176.94 lower than others.
+
+For the interaction terms, for each one-unit increase in income percentile and holding other variables fixed, the mortality rate for White infants is anticipated to decrease by 0.31 more compared to Black. While an incremental increase in the income percentile is expected to reduce IMR 3.24 further, the mortality rate for White infants in more affluent counties rises by 2.92 compared to other groups.
+
+```{r}
+# Convert regression summary to a tidy data frame
+tidy_model <- tidy(model)
+
+# Function to add stars based on p-values
+add_stars <- function(p) {
+  if (p < 0.001) return("(***)")
+  if (p < 0.01) return("(**)")
+  if (p < 0.05) return("(*)")
+  if (p < 0.1) return(".")
+  return("")
+}
+# Add stars to estimates
+tidy_model$Estimate_with_stars <- paste0(round(tidy_model$estimate, 3), sapply(tidy_model$p.value, add_stars))
+
+# Named vector of new labels
+new_labels <- c(
+  "(Intercept)" = "Intercept",
+  "pctile" = "Percentile",
+  "raceWhite" = "Race",
+  "HighIncome" = "HighIncome",
+  "White_HighIncome" = "White_HighIncome",
+  "pctile:raceWhite" = "Percentile:Race",
+  "pctile:HighIncome" = "Percentile:High_Income",
+  "pctile:White_HighIncome" = "Percentile:White_HighIncome"
+)
+
+# Update the term column with new labels
+tidy_model$term <- new_labels[tidy_model$term]
+
+# Rename columns and select the ones we want
+tidy_model <- tidy_model %>%
+  rename(
+    `Predictor` = term,
+    `Estimates` = Estimate_with_stars,
+    `Standard Error` = std.error,
+    `t value` = statistic,
+    `p value` = p.value
+  ) %>%
+  select(Predictor, Estimates, `Standard Error`, `t value`, `p value`)
+
+# Create a table using kable() and style it with kableExtra
+kable(tidy_model, digits = 3, format = "latex", booktabs = TRUE, caption = "Regression Summary") %>%
+  footnote(general = "Signif. codes: 0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
+```
+
+In terms of the significance of each coefficient, Table 1 presents the summary statistics of the regression model. Based on the p-value for each coefficient, all variables, except the interaction between income and Race, are significant in predicting the IMR.
+
+```{r}
+data$fitted_values <- predict(model, newdata = data)
+ggplot(data, aes(x = pctile, y = crude_rate, color = race)) +
+  stat_summary(fun = mean, geom = "point", size = 1) +
+  geom_line(data = data[data$pctile <= 50, ], 
+            aes(y = fitted_values, group = race), size = 1) +
+  geom_line(data = data[data$pctile > 50, ], 
+            aes(y = fitted_values, group = race), size = 1) +
+  geom_vline(aes(xintercept = 50), 
+             linetype = "dashed", color = "black", size = 1) +
+  labs(title = "Figure 1: Average infant mortality rate by race across different household \nincome levels",
+       x = "Income Percentile",
+       y = "Infants Mortality per 100,000") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(values = c("Black or African American" = "#F8766D", 
+                                "White" = "#00BFC4"),
+                     name = "Race")
+```
+Figure 1 shows the piece-wise regression lines for each race (red for Black and blue for White infants). The regression line for each race is divided into two parts by a vertical dashed line, demarcating the high-income and low-income groups. Each point on the graph denoted the average IMR at each income level.
+
+# Discussion
+
+From Table 1, we have strong evidence against our null hypothesis. Income level variations among different demographic groups indeed have impacts on IMR inequality. The coefficient of the interaction term between income and race is insignificant, indicating that the inequality of IMR between White and Black infants remains stable across income levels. This observation is corroborated by Figure 1, where the gap between the red and blue points at each percentile does not change significantly along income percentiles.
+
+Additionally, the coefficients for the last two interaction terms are significant, suggesting that the inequality between the two income groups is enhanced as income increases. Similarly, the white IMR in wealthier counties is about three more, indicating that the inequality between white infants with higher household incomes and other groups has shrunk. The convergence of regression lines on the high-income group can potentially prove this.
+
+However, due to the model's setup, it can not tell us how the IMR for two races varies with income within each income group. From Figure 1, even though we observe that the regression lines on the low-income group are parallel and converge for the high-income groups, our model can not tell us any statistical evidence. For a more detailed understanding, creating a model for each income group will be more appropriate.
+
+The empirical findings align with economic reasoning. As income rises, accessing medical services becomes more equitable across races, potentially explaining the non-significance of the interaction between income and race. Additionally, Black families might spend more on medical care with higher incomes. This could account for narrowing racial disparities in IMR within wealthier counties.
+
+# Conclusion
+
+To sum up, household income plays an essential role in the inequality of IMR across different demographic groups.
+
+\newpage
+
+# Bibiography
+1. U.S. Census Bureau. (2016). Selected Economic Characteristics (DP03). 2012-2016 American Community Survey 5-Year Estimates. Retrieved from [https://data.census.gov/table?q=DP03&g=010XX00US$0500000](https://data.census.gov/table?q=DP03&g=010XX00US$0500000)
+
+2. CDC WONDER. (2023). Centers for Disease Control and Prevention. Retrieved from [http://wonder.cdc.gov/](http://wonder.cdc.gov/)
+
+3. Houseal, J., & Wisconsin Watch, D. W.-B. (2023, September 18). Infant mortality rate: Black Wisconsin infants among highest in U.S. Wisconsin Watch. [https://wisconsinwatch.org/2023/09/wisconsin-black-infants-high-mortality-rates/](https://wisconsinwatch.org/2023/09/wisconsin-black-infants-high-mortality-rates/)
+
+4. Russo AJ, Lukasik J. Relationship between Infant Mortality, Household Income and Race in Maryland Counties: A Short Communication. J Med - Clin Res & Rev. 2022; 6(8): 1-4.
+
+5. Rosenquist, N. A., Cook, D. M., Ehntholt, A., Omaye, A., Muennig, P., & Pabayo, R. (2020). Differential relationship between state-level minimum wage and infant mortality risk among US infants born to white and black mothers. Journal of epidemiology and community health, 74(1), 14–19. [https://doi.org/10.1136/jech-2019-212987](https://doi.org/10.1136/jech-2019-212987)
