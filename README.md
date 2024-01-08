@@ -1,16 +1,16 @@
-# Starter folder
+# Accessing Racial Inequalities in Infant Mortality: Household Income Levels as a Determining Factor
 
 ## Overview
 
-This repo provides students with a foundation for their own projects associated with *Telling Stories with Data*. You do not need every aspect for every paper and you should delete aspects that you do not need.
+This paper uses the socio-economic data from ACS DP03 and racial infants death data from CDC WONDER, to investigate the racial inequalities in infant mortality. This paper concludes that the household income is a crucial factor in determining the racial infants mortality rate.
 
-To use this folder, click the green "Code" button", then "Download ZIP". Move the downloaded folder to where you want to work on your own computer, and then modify it to suit.
+All the data are extracted using API and stored at `inputs/data`. The output paper is in `outputs/paper/paper.pdf`.
 
 ## File Structure
 
 The repo is structured as:
 
--   `input/data` contains the data sources used in analysis including the raw data.
--   `outputs/data` contains the cleaned dataset that was constructed.
+-   `input/data` contains all the raw data in this paper.
+-   `outputs/data` contains the cleaned datasets
 -   `outputs/paper` contains the files used to generate the paper, including the Quarto document and reference bibliography file, as well as the PDF of the paper. 
 -   `scripts` contains the R scripts used to simulate, download and clean data.
