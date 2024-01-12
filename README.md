@@ -1,5 +1,4 @@
-# Accessing Racial Inequalities in Infant Mortality: Household Income Levels as a Determining Factor
-
+# Accessing Racial Inequalities in Infant Mortality: Household Income Levels as a Determining Factor (ECO481)
 ## Overview
 
 This paper uses the socio-economic data from ACS DP03 and racial infants death data from CDC WONDER, to investigate the racial inequalities in infant mortality. This paper concludes that the household income is a crucial factor in determining the racial infants mortality rate.
